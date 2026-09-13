@@ -3,23 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>岩芯薄片显微照片索引台</title>
+  <title>岩芯薄片编录工作台</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <main class="shell">
     <header class="mast">
       <div>
-        <p>Petrographic Slide Index</p>
-        <h1>岩芯薄片显微照片索引台</h1>
+        <p>Petrographic Slide Ledger</p>
+        <h1>岩芯薄片编录工作台</h1>
       </div>
-      <button id="exportBtn" type="button">导出观察清单</button>
+      <div class="mast-actions">
+        <button id="importBtn" type="button" class="secondary">导入清单</button>
+        <button id="exportBtn" type="button">导出清单</button>
+        <input id="importInput" type="file" accept="application/json,.json" hidden>
+      </div>
     </header>
+
+    <p id="notice" class="notice" hidden></p>
 
     <section class="layout">
       <form id="sampleForm" class="editor">
-        <h2>样本录入</h2>
-        <label>显微照片<input id="photoInput" type="file" accept="image/*"></label>
+        <h2 id="formTitle">样本录入</h2>
+        <label>显微照片（可多选，最多 8 张）<input id="photoInput" type="file" accept="image/*" multiple></label>
+        <div id="photoTray" class="photo-tray"></div>
         <label>样本编号<input name="code" required placeholder="BX-17-03"></label>
         <label>采样地点<input name="location" placeholder="剖面东侧第二层"></label>
         <div class="pair">
@@ -34,8 +41,21 @@
         </div>
         <label>主要矿物<input name="minerals" placeholder="石英、斜长石、黑云母"></label>
         <label>颗粒结构<input name="texture" placeholder="半自形粒状、碎裂结构"></label>
-        <label>老师批注<textarea name="comment" rows="4" placeholder="记录鉴定依据或疑点"></textarea></label>
-        <button type="submit">保存样本</button>
+        <label>老师批注<textarea name="comment" rows="3" placeholder="记录鉴定依据或疑点"></textarea></label>
+        <div class="pair">
+          <label>鉴定状态
+            <select name="status" id="statusSelect">
+              <option value="pending">待鉴定</option>
+              <option value="reviewed">已复核</option>
+              <option value="needs_supplement">需补充</option>
+            </select>
+          </label>
+          <label>审核人<input name="reviewer" placeholder="复核人姓名"></label>
+        </div>
+        <label>修订说明<textarea name="revisionNote" rows="2" placeholder="修改已定型记录时必填"></textarea></label>
+        <p id="formHint" class="form-hint"></p>
+        <button type="submit" id="submitBtn">保存样本</button>
+        <button type="button" id="cancelEditBtn" class="secondary" hidden>取消编辑</button>
       </form>
 
       <section class="board">
@@ -47,16 +67,41 @@
             <option>正交偏光</option>
             <option>反射光</option>
           </select>
+          <select id="statusFilter">
+            <option value="">全部状态</option>
+            <option value="pending">待鉴定</option>
+            <option value="reviewed">已复核</option>
+            <option value="needs_supplement">需补充</option>
+          </select>
+          <label class="filter-field">录入从<input id="dateFrom" type="date"></label>
+          <label class="filter-field">至<input id="dateTo" type="date"></label>
+          <button id="resetFilters" type="button" class="secondary">复位</button>
         </div>
+        <p id="resultCount" class="result-count"></p>
         <div id="sampleGrid" class="sample-grid"></div>
       </section>
+    </section>
 
-      <aside class="compare">
-        <h2>并排对比</h2>
-        <div id="comparePane" class="compare-pane"></div>
-      </aside>
+    <section class="compare">
+      <h2>并排对比 <span id="compareCount" class="compare-count"></span></h2>
+      <div id="compareSummary" class="compare-summary"></div>
+      <div id="comparePane" class="compare-pane"></div>
     </section>
   </main>
+
+  <div id="importModal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-labelledby="importTitle">
+      <h2 id="importTitle">导入预览</h2>
+      <p id="importSummary" class="import-summary"></p>
+      <ul id="importDetail" class="import-detail"></ul>
+      <p id="importBlockReason" class="form-hint" hidden>存在不合法或冲突的数据，已阻止写入；请修正文件后重新导入。</p>
+      <div class="modal-actions">
+        <button id="cancelImport" type="button" class="secondary">取消</button>
+        <button id="confirmImport" type="button">确认导入</button>
+      </div>
+    </div>
+  </div>
+
   <script src="./app.js"></script>
 </body>
 </html>
