@@ -170,7 +170,7 @@ function showNotice(text, isError = false) {
 
 /* ---------- 表单（录入 / 编辑） ---------- */
 
-const HINT_NEW = "新样本默认为「待鉴定」；状态只能从待鉴定转为已复核或需补充，定型后不可再变更状态。";
+const HINT_NEW = "新样本一律从「待鉴定」开始；保存后可通过编辑将其转为已复核或需补充（需填写审核人），定型后状态不可再变更。";
 const HINT_PENDING_EDIT = "该记录仍为待鉴定，可自由修改；也可直接转为已复核或需补充（需填写审核人）。";
 const hintFinalized = (status) => `该记录已定型（${STATUS_FLOW[status]}），状态不可再变更；保存修改将生成新版本，需填写修订说明。`;
 
@@ -201,7 +201,7 @@ function resetForm() {
   existingPhotos = [];
   photoInput.value = "";
   form.reset();
-  statusSelect.disabled = false;
+  statusSelect.disabled = true; // 新建模式锁定为待鉴定
   statusSelect.value = "pending";
   formTitle.textContent = "样本录入";
   submitBtn.textContent = "保存样本";
@@ -306,12 +306,8 @@ form.addEventListener("submit", (event) => {
   }
 
   if (!editingId) {
-    // 新建：允许直接以任意状态录入；进入已复核/需补充需填写审核人
-    const status = STATUS_VALUES.includes(statusSelect.value) ? statusSelect.value : "pending";
-    if (status !== "pending" && !fields.reviewer) {
-      showNotice("转为已复核或需补充时，需填写审核人", true);
-      return;
-    }
+    // 新建样本一律从待鉴定开始（下拉框已禁用，这里再兜底）
+    const status = "pending";
     const now = new Date().toISOString();
     const sample = {
       id: crypto.randomUUID(),
